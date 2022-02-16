@@ -43,21 +43,26 @@ def update_tracks(tracker, frame_count, save_txt, txt_path, save_img, view_img, 
         class_num = track.class_num
         bbox = xyxy
         class_name = names[int(class_num)] if opt.detection_engine == "yolov5" else class_num
-        if opt.info:
-            print("Tracker ID: {}, Class: {}, BBox Coords (xmin, ymin, xmax, ymax): {}".format(
-                str(track.track_id), class_name, (int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3]))))
+ 
+        if class_name != 'person':
+          if opt.info:
+              print("Tracker ID: {}, Class: {}, BBox Coords (xmin, ymin, xmax, ymax): {}".format(
+                  str(track.track_id), class_name, (int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3]))))
+ 
+          if save_txt:  # Write to file
+              xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
+ 
+              with open(txt_path + '.txt', 'a') as f:
+                  # f.write('frame: {}; track: {}; class: {}; bbox: {};\n'.format(frame_count, track.track_id, class_num,
+                  #                                                               *xywh))
+                  f.write('frame: {}; Tracker ID: {}; Class: {}; BBox Coords (xmin, ymin, xmax, ymax): {}\n'.format(
+                      frame_count, str(track.track_id), class_name, (int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3]))))
+ 
+          if save_img or view_img:  # Add bbox to image
+              label = f'{class_name} #{track.track_id}'
+              plot_one_box(xyxy, im0, label=label,
+                          color=get_color_for(label), line_thickness=opt.thickness)
 
-        if save_txt:  # Write to file
-            xywh = (xyxy2xywh(torch.tensor(xyxy).view(1, 4)) / gn).view(-1).tolist()  # normalized xywh
-
-            with open(txt_path + '.txt', 'a') as f:
-                f.write('frame: {}; track: {}; class: {}; bbox: {};\n'.format(frame_count, track.track_id, class_num,
-                                                                              *xywh))
-
-        if save_img or view_img:  # Add bbox to image
-            label = f'{class_name} #{track.track_id}'
-            plot_one_box(xyxy, im0, label=label,
-                         color=get_color_for(label), line_thickness=opt.thickness)
 
 def get_color_for(class_num):
     colors = [
